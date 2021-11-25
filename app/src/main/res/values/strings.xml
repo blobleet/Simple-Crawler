@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">SimpleCrawler</string>
+    <string name="dummy_string">Dummy Text</string>
+    <string name="url">Place URL here</string>
+    <string name="crawling">Crawling…</string>
+</resources>
