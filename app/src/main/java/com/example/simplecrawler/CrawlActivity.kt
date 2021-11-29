@@ -1,6 +1,5 @@
 package com.example.simplecrawler
 
-import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -46,25 +45,26 @@ class CrawlActivity : AppCompatActivity() {
         initRecyclerView()
     }
 
-    private fun initRecyclerView(){
+    private fun initRecyclerView() {
         recyclerView = findViewById(R.id.recycler_view)
         recyclerAdapter = RecyclerAdapter(viewModel.mUrlListLiveData.value)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = recyclerAdapter
     }
 
-    private fun observeCrawling(){
+    private fun observeCrawling() {
         // Observe if app is crawling
         viewModel.isCrawling.observe(this, Observer {
             val isCrawling = it
-            loadingText.visibility = if(isCrawling) View.VISIBLE else View.GONE
+            loadingText.visibility = if (isCrawling) View.VISIBLE else View.GONE
         })
     }
-    private fun observeUrls(){
+
+    private fun observeUrls() {
         // Observe changes in urls data
         viewModel.mUrlListLiveData.observe(this, Observer {
             val startPos: Int
-            if (recyclerAdapter.items == null){
+            if (recyclerAdapter.items == null) {
                 startPos = 0
                 recyclerAdapter.items = it
             } else {
