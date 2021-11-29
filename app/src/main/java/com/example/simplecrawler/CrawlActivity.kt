@@ -1,5 +1,6 @@
 package com.example.simplecrawler
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -24,33 +25,19 @@ class CrawlActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_crawl)
 
+        // Get views
         loadingText = findViewById(R.id.text_loading)
         btnStop = findViewById(R.id.btn_stop)
 
         // Get user input from main activity
-        val url = URL(intent.getStringExtra(MainActivity.Constants.INPUT_URL_KEY))
-        val maxDepth = intent.getIntExtra(MainActivity.Constants.INPUT_DEPTH_KEY, 0)
+        val url = URL(intent.getStringExtra(MainActivity.INPUT_URL_KEY))
+        val maxDepth = intent.getIntExtra(MainActivity.INPUT_DEPTH_KEY, -1)
 
         viewModel = ViewModelProvider(this)[CrawlViewModel::class.java]
         viewModel.init(url, maxDepth)
 
-        // Observe if app is crawling
-        viewModel.isCrawling.observe(this, Observer {
-            val isCrawling = it
-            loadingText.visibility = if(isCrawling) View.VISIBLE else View.GONE
-        })
-        // Observe changes in urls data
-        viewModel.mUrlListLiveData.observe(this, Observer {
-            val startPos: Int
-            if (recyclerAdapter.items == null){
-                startPos = 0
-                recyclerAdapter.items = it
-            } else {
-                startPos = recyclerAdapter.itemCount - 1
-                (recyclerAdapter.items as ArrayList).addAll(it)
-            }
-            recyclerAdapter.notifyItemRangeInserted(startPos, it.size)
-        })
+        observeCrawling()
+        observeUrls()
 
         btnStop.setOnClickListener {
             viewModel.stopCrawling()
@@ -64,5 +51,27 @@ class CrawlActivity : AppCompatActivity() {
         recyclerAdapter = RecyclerAdapter(viewModel.mUrlListLiveData.value)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = recyclerAdapter
+    }
+
+    private fun observeCrawling(){
+        // Observe if app is crawling
+        viewModel.isCrawling.observe(this, Observer {
+            val isCrawling = it
+            loadingText.visibility = if(isCrawling) View.VISIBLE else View.GONE
+        })
+    }
+    private fun observeUrls(){
+        // Observe changes in urls data
+        viewModel.mUrlListLiveData.observe(this, Observer {
+            val startPos: Int
+            if (recyclerAdapter.items == null){
+                startPos = 0
+                recyclerAdapter.items = it
+            } else {
+                startPos = recyclerAdapter.itemCount - 1
+                (recyclerAdapter.items as ArrayList).addAll(it)
+            }
+            recyclerAdapter.notifyItemRangeInserted(startPos, it.size)
+        })
     }
 }

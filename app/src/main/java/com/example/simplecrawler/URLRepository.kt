@@ -15,6 +15,8 @@ import java.util.regex.Pattern
 import kotlin.math.log
 
 class URLRepository{
+    var interrupted = false  // Flag to let viewmodel know if crawling is interrupted
+
     private val TAG = "URLRepository"
 
     companion object {
@@ -29,12 +31,11 @@ class URLRepository{
         // Declare empty list to be filled with crawled urls
         val urlList = arrayListOf<String>()
 
-        // Declare a regex that reads only urls (I made it myself!!)
-        // and a list of extensions
+        // Declare a regex that reads only urls starting with href (I made it myself!!)
         val regex = Pattern.compile(
-            "(?<=href=\")https://(www\\.)?([a-zA-Z\\d-]+)(\\.[a-z]+)+(/[a-zA-Z\\d?+=\\-_#%~:,.]+)*(\\.[a-z]+)?"
-        )
-        val uselessExt = arrayOf(".css", ".png", ".jpg", ".xml", ".html", ".js", ".php", ".zip")
+            "(?<=href=\")https://(www\\.)?([a-zA-Z\\d-]+)(\\.[a-z]+)+(/[a-zA-Z\\d?+=\\-_#%~:,.]+)*(\\.[a-z]+)?")
+        val uselessExt = arrayOf(
+            ".css", ".png", ".jpg", ".xml", ".html", ".js", ".php", ".zip", ".svg", ".ico")
 
         // These variables are for getting an html string from http connection
         var input: BufferedReader
@@ -48,11 +49,17 @@ class URLRepository{
 
             crawledUrls.add(url)  // Add url to the list of crawled urls
             Log.d(TAG, "fetchUrls: Crawling $url")
+
+            connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
             try{
-                connection = URL(url).openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
                 // Try block is mainly for this line since a lot of pages are not accessible
                 input = BufferedReader(InputStreamReader(connection.inputStream))
+                // Add the input stream from http connection line by line inside of "content"
+                while (input.readLine().also { inputLine = it } != null) {
+                    content.append(inputLine + "\n")
+                }
             } catch(u: UnknownHostException) {
                 Log.d(TAG, "fetchUrls: Caught UnknownHostException, can't open site!")
                 u.message
@@ -68,18 +75,14 @@ class URLRepository{
                 p.message
                 p.stackTrace
                 continue
-            }
-
-            try{
-                // Add the input stream from http connection line by line inside of "content"
-                while (input.readLine().also { inputLine = it } != null) {
-                    content.append(inputLine + "\n")
-                }
             } catch(i: InterruptedIOException){
                 // If the thread is interrupted it just returns the url list so far
                 i.message
                 i.stackTrace
-                return urlList
+                interrupted = true
+                content.setLength(0)
+                connection.disconnect()
+                break
             }
 
             val matcher = regex.matcher(content)

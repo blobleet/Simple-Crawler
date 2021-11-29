@@ -10,17 +10,17 @@ import kotlin.collections.ArrayList
 
 class CrawlViewModel: ViewModel() {
     private lateinit var mStartUrl: URL
-    private var mMaxDepth: Int? = 0
+    private var mMaxDepth: Int = 0
     var isCrawling: LiveData<Boolean> = MutableLiveData()
     var mUrlListLiveData: LiveData<ArrayList<String>> = MutableLiveData()
-    var mAllUrls: ArrayList<String> = ArrayList()  // Keeps track of all urls inside the live data  as strings
+    private var mAllUrls: ArrayList<String> = ArrayList()  // Keeps track of all urls inside the live data as strings
     private var mFoundUrls: ArrayList<String> = ArrayList()  // Urls found from crawling
     lateinit var mRepo: URLRepository
     private lateinit var crawlThread: Thread
 
     private val TAG = "CrawlViewModel"
 
-    fun init(startUrl: URL, maxDepth: Int?){
+    fun init(startUrl: URL, maxDepth: Int){
         mStartUrl = startUrl
         mMaxDepth = maxDepth
         mRepo = URLRepository()
@@ -33,7 +33,7 @@ class CrawlViewModel: ViewModel() {
                 // After everything is crawled:
                 (isCrawling as MutableLiveData).postValue(false)
             } catch(e: InterruptedException){
-                // Or if thread is interrupted
+                // Or if thread is interrupted:
                 (isCrawling as MutableLiveData).postValue(false)
             }
         })
@@ -43,7 +43,7 @@ class CrawlViewModel: ViewModel() {
 
     private fun fetchFromRepo(depth: Int = 0){
         // Recursion bottom (">=" instead of "==" for safety purposes idk)
-        if (depth >= mMaxDepth!!)
+        if (depth == mMaxDepth)
             return
 
         // If it's the first iteration of crawling, fetch with an array of just the starting url
@@ -57,12 +57,14 @@ class CrawlViewModel: ViewModel() {
         for (url in mFoundUrls)
             if (url !in mAllUrls)
                 mAllUrls.add(url)
-        // Update the live data with new urls
-        (mUrlListLiveData as MutableLiveData).postValue(mAllUrls)
+        // Update the live data with new urls only if there are any
+        if(mFoundUrls.size != 0)
+            (mUrlListLiveData as MutableLiveData).postValue(mAllUrls)
         Log.d(TAG, "fetchFromRepo: ===== FINISHED FETCHING ON DEPTH ${depth + 1} =====")
 
-        // Call self with increased depth
-        fetchFromRepo(depth.inc())
+        // Call self with increased depth unless thread has been interrupted
+        if (!mRepo.interrupted)
+            fetchFromRepo(depth.inc())
     }
 
     fun stopCrawling(){
