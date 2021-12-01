@@ -16,51 +16,51 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val INPUT_URL_KEY = "com.example.simplecrawler.MainActivity.urlkey"
         const val INPUT_DEPTH_KEY = "com.example.simplecrawler.MainActivity.depthkey"
-        const val SHAREDPREFS_SET_KEY = "com.example.simplecrawler.MainActivity.setkey"
+        const val mSharedPrefs_SET_KEY = "com.example.simplecrawler.MainActivity.setkey"
     }
 
-    private lateinit var buttonCrawl: Button
-    private lateinit var autoTextUrl: AutoCompleteTextView
-    private lateinit var textDepth: EditText
+    private lateinit var mButtonCrawl: Button
+    private lateinit var mAutoTextUrl: AutoCompleteTextView
+    private lateinit var mTextDepth: EditText
 
-    private lateinit var sharedprefs: SharedPreferences
+    private lateinit var mSharedPrefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        sharedprefs = getPreferences(Context.MODE_PRIVATE)
-        // Put an empty set of strings in sharedprefs if there's no set there already
-        if (!sharedprefs.contains(SHAREDPREFS_SET_KEY)) {
-            sharedprefs.edit()
-                .putStringSet(SHAREDPREFS_SET_KEY, HashSet<String>())
+        mSharedPrefs = getPreferences(Context.MODE_PRIVATE)
+        // Put an empty set of strings in mSharedPrefs if there's no set there already
+        if (!mSharedPrefs.contains(mSharedPrefs_SET_KEY)) {
+            mSharedPrefs.edit()
+                .putStringSet(mSharedPrefs_SET_KEY, HashSet<String>())
                 .apply()
         }
-        // Copy the contents of sharedprefs' set into savedUrls cause I can't modify it otherwise
+        // Copy the contents of mSharedPrefs' set into savedUrls cause I can't modify it otherwise
         val savedUrls =
-            HashSet<String>(sharedprefs.getStringSet(SHAREDPREFS_SET_KEY, null) as HashSet)
+            HashSet<String>(mSharedPrefs.getStringSet(mSharedPrefs_SET_KEY, null) as HashSet)
 
-        buttonCrawl = findViewById(R.id.btn_crawl)
-        autoTextUrl = findViewById(R.id.auto_text_edit_url)
-        textDepth = findViewById(R.id.text_edit_depth)
+        mButtonCrawl = findViewById(R.id.btn_crawl)
+        mAutoTextUrl = findViewById(R.id.auto_text_edit_url)
+        mTextDepth = findViewById(R.id.text_edit_depth)
 
-        val autoTextUrlAdapter =
+        val mAutoTextUrlAdapter =
             ArrayAdapter(this, android.R.layout.simple_list_item_1, savedUrls.toList())
-        autoTextUrl.setAdapter(autoTextUrlAdapter)
+        mAutoTextUrl.setAdapter(mAutoTextUrlAdapter)
 
-        buttonCrawl.setOnClickListener {
+        mButtonCrawl.setOnClickListener {
             val intent = Intent(this, CrawlActivity::class.java)
-            intent.putExtra(INPUT_URL_KEY, autoTextUrl.text.toString())
-            if (textDepth.text.toString() == "")
-                intent.putExtra(INPUT_DEPTH_KEY, textDepth.text)
+            intent.putExtra(INPUT_URL_KEY, mAutoTextUrl.text.toString())
+            if (mTextDepth.text.toString() == "")
+                intent.putExtra(INPUT_DEPTH_KEY, mTextDepth.text)
             else
-                intent.putExtra(INPUT_DEPTH_KEY, textDepth.text.toString().toInt())
+                intent.putExtra(INPUT_DEPTH_KEY, mTextDepth.text.toString().toInt())
 
-            // Modify the copy of the set in sharedprefs
-            savedUrls.add(autoTextUrl.text.toString())
-            // Then replace the old set with the new one in sharedprefs
-            with(sharedprefs.edit()) {
-                putStringSet(SHAREDPREFS_SET_KEY, savedUrls)
+            // Modify the copy of the set in mSharedPrefs
+            savedUrls.add(mAutoTextUrl.text.toString())
+            // Then replace the old set with the new one in mSharedPrefs
+            with(mSharedPrefs.edit()) {
+                putStringSet(mSharedPrefs_SET_KEY, savedUrls)
                 apply()
             }
 
